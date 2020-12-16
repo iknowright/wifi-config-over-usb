@@ -1,0 +1,9 @@
+# IDE
+.vscode
+.python-version
+
+# project related
+wpa_supplicant.conf
+previous.txt
+current.txt
+diff.txt
