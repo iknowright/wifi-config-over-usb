@@ -5,18 +5,7 @@ from time import sleep
 from jinja2 import FileSystemLoader, Environment
 
 
-# lsblk --fs >/tmp/nousb.txt
-def get_wifi_config(diff_file):
-    mount_point = None
-    with open(diff_file, 'r') as f:
-        lines = f.readlines()
-        if len(lines) < 2:
-            return
-        tokens = lines[1].strip().split(' ')
-        direction = tokens[0]
-        if direction == '<':
-            mount_point = tokens[-1]
-
+def get_wifi_config(mount_point):
     if mount_point:
         with open(f'{mount_point}/wifi.config', 'r') as f:
             lines = f.readlines()
@@ -33,15 +22,39 @@ def get_wifi_config(diff_file):
 
 
 def routine():
+    os.system('lsblk --fs -J > previous.json')
+
     while 1:
-        # lsblk --fs >/tmp/nousb.txt
-        os.system('lsblk --fs > current.txt')
-        os.system('diff current.txt previous.txt > diff.txt')
-        get_wifi_config('diff.txt')
-        os.system('cp current.txt previous.txt')
+        os.system('lsblk --fs -J > current.json')
+
+        previous, current = {}, {}
+        previous_devices, current_devices = [], []
+        with open('previous.json', 'r') as pf:
+            previous_devices = json.load(pf).get('blockdevices', [])
+            pf.close()
+        with open('current.json', 'r') as cf:
+            current_devices = json.load(cf).get('blockdevices', [])
+            cf.close()
+
+        devices = [device for device in current_devices if device not in previous_devices]
+        new_device = None
+        if len(devices) == 1:
+            new_device = devices[0]
+
+        if new_device:
+            mount_point = new_device.get('mountpoint')
+            if not mount_point:
+                mount_point = f'/mnt/{new_device["uuid"]}'
+                os.system(f'sudo mkdir -p {mount_point}')
+                os.system(f'sudo mount /dev/{new_device["name"]} {mount_point}')
+
+            get_wifi_config(mount_point)
+
+        os.system('lsblk --fs -J > previous.json')
+
+        print(new_device)
         sleep(5)
 
 
 if __name__ == "__main__":
-    os.system('lsblk --fs > previous.txt')
     routine()

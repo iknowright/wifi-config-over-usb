@@ -4,6 +4,6 @@
 
 # project related
 wpa_supplicant.conf
-previous.txt
-current.txt
-diff.txt
+previous.json
+current.json
+diff.json
