@@ -1,9 +1,0 @@
-# IDE
-.vscode
-.python-version
-
-# project related
-wpa_supplicant.conf
-previous.json
-current.json
-diff.json
